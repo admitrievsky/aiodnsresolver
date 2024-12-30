@@ -21,6 +21,7 @@ from aiodnsresolver import (
     TYPES,
     DnsCnameChainTooLong,
     DnsError,
+    DnsNoMatchingAnswers,
     DnsRecordDoesNotExist,
     DnsSocketError,
     DnsTimeout,
@@ -1768,6 +1769,22 @@ class TestResolverEndToEnd(unittest.TestCase):
             self.assertIsInstance(res[0], ipaddress.IPv6Address)
             self.assertEqual(str(res[0]), '::1')
             self.assertEqual(res[0].expires_at, loop.time())
+
+
+    @async_test
+    async def test_root_servers_queries(self):
+        import subprocess
+        print(subprocess.call(['nslookup', '.', '8.8.8.8']))
+        # resolve, _ = Resolver()
+        # with self.assertRaises(DnsNoMatchingAnswers):
+        #     await resolve('', TYPES.A)
+
+
+    @async_test
+    async def test_root_servers_queries1(self):
+        resolve, _ = Resolver()
+        with self.assertRaises(DnsNoMatchingAnswers):
+            await resolve('root-servers.net', TYPES.A)
 
 
 def patch_open():
