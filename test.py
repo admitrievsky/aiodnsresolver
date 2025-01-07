@@ -21,6 +21,7 @@ from aiodnsresolver import (
     TYPES,
     DnsCnameChainTooLong,
     DnsError,
+    DnsNoMatchingAnswers,
     DnsRecordDoesNotExist,
     DnsSocketError,
     DnsTimeout,
@@ -1646,6 +1647,10 @@ class TestResolverEndToEnd(unittest.TestCase):
     """ Tests that query current real nameserver(s) for real domains
     """
 
+    # before each
+    def setUp(self):
+        self.addCleanup(patch_open(upstream_ip='8.8.8.8'))
+
     @async_test
     async def test_a_query(self):
         loop = asyncio.get_event_loop()
@@ -1770,11 +1775,27 @@ class TestResolverEndToEnd(unittest.TestCase):
             self.assertEqual(res[0].expires_at, loop.time())
 
 
-def patch_open():
+    @async_test
+    async def test_root_servers_queries(self):
+        resolve, _ = Resolver()
+        with self.assertRaises(DnsNoMatchingAnswers):
+            await resolve('', TYPES.A)
+        with self.assertRaises(DnsNoMatchingAnswers):
+            await resolve('root-servers.net', TYPES.A)
+
+
+    @async_test
+    async def test_root_servers_queries1(self):
+        resolve, _ = Resolver()
+        with self.assertRaises(DnsNoMatchingAnswers):
+            await resolve('root-servers.net', TYPES.A)
+
+
+def patch_open(upstream_ip='127.0.0.1'):
     def mock_open(file_name, _):
         lines = \
-            ['127.0.0.1 localhost'] if file_name == '/etc/hosts' else \
-            ['nameserver 127.0.0.1']
+            [f'{upstream_ip} localhost'] if file_name == '/etc/hosts' else \
+            [f'nameserver {upstream_ip}']
 
         context_manager = MagicMock()
         context_manager.__enter__.return_value = lines

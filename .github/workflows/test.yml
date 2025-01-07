@@ -30,7 +30,7 @@ jobs:
           pip install ".[test]"
       - name: "Run tests"
         run: |
-          pytest test.py --cov
+          pytest test.py --cov -rP
       - uses: codecov/codecov-action@v3
 
   lint:
